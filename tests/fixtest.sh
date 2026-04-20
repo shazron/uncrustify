@@ -31,7 +31,7 @@ while [ -n "$1" ] ; do
 
   # did1='' # unused
   for t in $files ; do
-    other=$(echo "$t" | sed "s/^results/output/")
+    other=$(echo "$t" | sed "s/^results/expected/")
     echo "cp '$t' '$other'"
     cp "$t" "$other"
   done
