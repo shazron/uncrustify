@@ -1597,3 +1597,11 @@
 34878  common/global_align_span_typedef_num_lines-1.cfg     cpp/align_typedef_span_num_mixed.cpp
 34879  common/global_align_span_typedef_num_lines-2.cfg     cpp/align_typedef_span_num_mixed.cpp
 34880  common/global_align_span_typedef_num_lines-3.cfg     cpp/align_typedef_span_num_mixed.cpp
+34881  cpp/align_constr_value_span_num_mixed-1.cfg          cpp/align_constr_value_span_num_mixed.cpp
+34882  cpp/align_constr_value_span_num_mixed-2.cfg          cpp/align_constr_value_span_num_mixed.cpp
+34883  cpp/align_constr_value_span_num_mixed-3.cfg          cpp/align_constr_value_span_num_mixed.cpp
+34884  cpp/align_constr_value_span_num_mixed-4.cfg          cpp/align_constr_value_span_num_mixed.cpp
+34885  cpp/align_constr_value_span_num_mixed-5.cfg          cpp/align_constr_value_span_num_mixed.cpp
+34886  common/global_align_span_constr_value_num_lines-1.cfg cpp/align_constr_value_span_num_mixed.cpp
+34887  common/global_align_span_constr_value_num_lines-2.cfg cpp/align_constr_value_span_num_mixed.cpp
+34888  common/global_align_span_constr_value_num_lines-3.cfg cpp/align_constr_value_span_num_mixed.cpp

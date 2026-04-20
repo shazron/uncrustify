@@ -197,7 +197,7 @@ void newlines_class_colon_pos(E_Token tok)
             if (with_acv)
             {
                constructorValue.End();
-               prev_acv_chunk  = Chunk::NullChunkPtr;;
+               prev_acv_chunk  = Chunk::NullChunkPtr;
                acv_skip_budget = acv_skip_cfg;
             }
             continue;
