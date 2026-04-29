@@ -22,10 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
+        uses: actions/checkout@v6
 
       - name: Configure CMake
         env:
