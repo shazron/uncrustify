@@ -840,7 +840,7 @@ static bool handle_rvalue_function_decl(Chunk *prev, Chunk *pc, Chunk *next)
       return(false);
    }
    // Try to find the function name - either directly or through qualified name
-   Chunk *func_name  = nullptr;
+   Chunk *func_name  = Chunk::NullChunkPtr;
    Chunk *after_next = next->GetNextNcNnl();
 
    // Pattern 1: next is directly the function name followed by (
@@ -943,7 +943,7 @@ static bool handle_rvalue_function_decl(Chunk *prev, Chunk *pc, Chunk *next)
       }
    }
 
-   if (func_name == nullptr)
+   if (func_name->IsNullChunk())
    {
       return(false);
    }
@@ -2127,7 +2127,7 @@ static bool handle_rvalue_func_ptr_params(Chunk *prev, Chunk *pc, Chunk *next)
    // Walk backward to find an opening paren that is part of a function pointer pattern.
    // The pattern is: (...*...) ( <-- we're inside this paren
 
-   Chunk *paren_open = nullptr;
+   Chunk *paren_open = Chunk::NullChunkPtr;
 
    // Find the containing paren by walking back
    int paren_depth = 0;
@@ -2183,7 +2183,7 @@ static bool handle_rvalue_func_ptr_params(Chunk *prev, Chunk *pc, Chunk *next)
       || before_paren->Is(E_Token::CT_ANGLE_CLOSE))
    {
       // Find the E_Token::CT_PAREN_CLOSE to check for pointer pattern.
-      Chunk *paren_close_to_check = nullptr;
+      Chunk *paren_close_to_check = Chunk::NullChunkPtr;
 
       if (before_paren->Is(E_Token::CT_PAREN_CLOSE))
       {
@@ -2212,26 +2212,22 @@ static bool handle_rvalue_func_ptr_params(Chunk *prev, Chunk *pc, Chunk *next)
             }
          }
       }
-
       // Now check the found paren_close for pointer pattern (if any)
-      if (paren_close_to_check != nullptr)
-      {
-         Chunk *inner_open = paren_close_to_check->GetOpeningParen();
+      Chunk *inner_open = paren_close_to_check->GetOpeningParen();
 
-         if (inner_open->IsNotNullChunk())
+      if (inner_open->IsNotNullChunk())
+      {
+         // Look inside for * (pointer) or ::* (member pointer)
+         for (Chunk *inner = inner_open->GetNext(); inner != paren_close_to_check && inner->IsNotNullChunk(); inner = inner->GetNext())
          {
-            // Look inside for * (pointer) or ::* (member pointer)
-            for (Chunk *inner = inner_open->GetNext(); inner != paren_close_to_check && inner->IsNotNullChunk(); inner = inner->GetNext())
+            if (  inner->Is(E_Token::CT_STAR)
+               || inner->Is(E_Token::CT_PTR_TYPE)
+               || inner->Is(E_Token::CT_DEREF))
             {
-               if (  inner->Is(E_Token::CT_STAR)
-                  || inner->Is(E_Token::CT_PTR_TYPE)
-                  || inner->Is(E_Token::CT_DEREF))
-               {
-                  LOG_FMT(LFCNR, "%s(%d): orig line is %zu, orig col is %zu - && is rvalue ref in function pointer param\n",
-                          __func__, __LINE__, pc->GetOrigLine(), pc->GetOrigCol());
-                  pc->SetType(E_Token::CT_BYREF);
-                  return(true);
-               }
+               LOG_FMT(LFCNR, "%s(%d): orig line is %zu, orig col is %zu - && is rvalue ref in function pointer param\n",
+                       __func__, __LINE__, pc->GetOrigLine(), pc->GetOrigCol());
+               pc->SetType(E_Token::CT_BYREF);
+               return(true);
             }
          }
       }
