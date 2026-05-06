@@ -10,6 +10,7 @@
 
 #include "align/same_func_call_params.h"
 
+#include "align/span_num_resolve.h"
 #include "align/stack.h"
 #include "log_rules.h"
 
@@ -48,6 +49,15 @@ void align_same_func_call_params()
    log_rule_B("align_same_func_call_params_thresh");
    thresh = options::align_same_func_call_params_thresh();
 
+   log_rule_B("align_same_func_call_params_span_num_empty_lines");
+   log_rule_B("align_same_func_call_params_span_num_pp_lines");
+   log_rule_B("align_same_func_call_params_span_num_cmt_lines");
+   const LineSkipConfig skip_cfg = resolve_span_num_config(
+      options::align_same_func_call_params_span_num_empty_lines(),
+      options::align_same_func_call_params_span_num_pp_lines(),
+      options::align_same_func_call_params_span_num_cmt_lines());
+   LineSkipConfig skip_budget = skip_cfg;
+
    fcn_as.Start(span, thresh);
    LOG_FMT(LAS, "%s(%d): (3): span is %zu, thresh is %zu\n",
            __func__, __LINE__, span, thresh);
@@ -66,16 +76,7 @@ void align_same_func_call_params()
 
       if (pc->IsNot(E_Token::CT_FUNC_CALL))
       {
-         if (pc->IsNewline())
-         {
-            for (auto &as_v : array_of_AlignStack)
-            {
-               as_v.NewLines(pc->GetNlCount());
-            }
-
-            fcn_as.NewLines(pc->GetNlCount());
-         }
-         else if (pc->Is(E_Token::CT_FUNC_CTOR_VAR))                             // Issue #3916
+         if (pc->Is(E_Token::CT_FUNC_CTOR_VAR))                             // Issue #3916
          {
             Chunk *open_paren  = pc->GetNextType(E_Token::CT_FPAREN_OPEN, pc->GetLevel());
             Chunk *close_paren = open_paren->GetClosingParen();
@@ -101,7 +102,8 @@ void align_same_func_call_params()
                   as_v.Flush();
                }
 
-               align_root = Chunk::NullChunkPtr;
+               align_root  = Chunk::NullChunkPtr;
+               skip_budget = skip_cfg;
             }
          }
          continue;
@@ -157,6 +159,31 @@ void align_same_func_call_params()
             && align_fcn_name.equals(align_root_name))
          {
             //WITH_STACKID_DEBUG;
+            // Deferred NL counting: count newlines between the last matching call
+            // (align_cur) and the current one (pc) only when a match is confirmed.
+            // Direct counting (on every CT_NEWLINE) would wrongly consume budget for
+            // gaps between non-matching calls.
+            size_t nl_cnt = 0;
+
+            for (Chunk *tmp = align_cur->GetNext();
+                 tmp->IsNotNullChunk() && tmp != pc;
+                 tmp = tmp->GetNext())
+            {
+               if (tmp->IsNewline() || tmp->IsComment())
+               {
+                  nl_cnt += tmp->GetNlCountFiltered(skip_budget);
+               }
+            }
+
+            fcn_as.NewLines(nl_cnt);
+
+            for (auto &as_v : array_of_AlignStack)
+            {
+               as_v.NewLines(nl_cnt);
+            }
+
+            skip_budget = skip_cfg;
+
             fcn_as.Add(pc);
             align_cur->AlignData().next = pc;
             align_cur = pc;
@@ -175,7 +202,8 @@ void align_same_func_call_params()
                as_v.Flush();
             }
 
-            align_root = Chunk::NullChunkPtr;
+            align_root  = Chunk::NullChunkPtr;
+            skip_budget = skip_cfg;
          }
       }
       LOG_FMT(LASFCP, "%s(%d):\n", __func__, __LINE__);
